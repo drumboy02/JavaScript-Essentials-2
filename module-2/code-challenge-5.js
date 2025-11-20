@@ -1,0 +1,270 @@
+/*
+Scenario:
+create an ExtendedTutoring class, inheriting from Tutoring.
+
+Equip it with one new method: sendMessages(from, to, message). the from argument is the user
+(student or teacher) who sends the message. the argument to is the list of recipients (user
+objects).
+
+test your solution using the following code:
+
+let tutoring = new ExtendedTutoring();
+tutoring.addStudent('Rafael', 'Fife','rfife@rhyta.com');
+tutoring.addStudent('Kelly', 'Estes', 'k_estes@dayrep.com');
+tutoring.addTeacher('Paula', 'Thompkins', 'PaulaThompkins@jourrapide.com');
+let to = [];
+to.push(tutoring.getStudentByName('Rafael', 'Fife'));
+to.push(tutoring.getStudentByName('Kelly', 'Estes'));
+tutoring.sendMessages(tutoring.getTeacherByName('Paula', 'Thompkins'), to, 'test message');
+for(let user of to) {
+    user.showMessagesHistory();
+}
+// -> PaulaThompkins@jourrapide.com -> rfife@rhyta.com: test message
+// -> PaulaThompkins@jourrapide.com -> k_estes@dayrep.com: test message
+*/
+
+/*
+Scenario:
+let's try to put all the previously prepared elements together. create a Tutoring class that
+will have two lists of users: students and teachers seperately.
+
+define methods in it:
+
+    - getStudentByName(name, surname): which will return a student object with the given name
+      and surname (or undefined if the student has not been added before)
+    
+    - getTeacherByName(name, surname): which will return a teacher object with the given name
+      and surname (or undefined if the teacher has not been added before)
+
+    - getStudentsForTeacher(teacher): which will return an array of students that teacher is
+      able to tutor;
+
+    - getTeacherForStudent(student): which will return an array of teachers able to tutor the
+      student;
+
+    - addStudent(name, surname, email): which will add a new student object to the list;
+
+    - addTeacher(name, surname, email): which will add a new teacher object to the list.
+
+use previously prepared classes and their methods (e.g. match).
+
+test your solution using the following code:
+
+let tutoring = new ExtendedTutoring();
+tutoring.addStudent('Rafael', 'Fife','rfife@rhyta.com');
+tutoring.addStudent('Kelly', 'Estes', 'k_estes@dayrep.com');
+tutoring.addTeacher('Paula', 'Thompkins', 'PaulaThompkins@jourrapide.com');
+let to = [];
+to.push(tutoring.getStudentByName('Rafael', 'Fife'));
+to.push(tutoring.getStudentByName('Kelly', 'Estes'));
+tutoring.sendMessages(tutoring.getTeacherByName('Paula', 'Thompkins'), to, 'test message');
+for(let user of to) {
+    user.showMessagesHistory();
+}
+// -> PaulaThompkins@jourrapide.com -> rfife@rhyta.com: test message
+// -> PaulaThompkins@jourrapide.com -> k_estes@dayrep.com: test message
+*/
+
+function sendEmail(from, to, message) {}
+
+class User {
+    constructor({name, surname, email, role}) {
+        this.name = name;
+        this.surname = surname;
+        this.email = email;
+        this.role = role;
+        this.messages = [];
+        this.courses = [];
+    }
+
+    addCourse(course, level) {
+        for(let i=0; i < this.courses.length; i++) {
+            if(this.courses[i].course === course) {
+                return;
+            }
+        }
+        this.courses.push({course, level});
+    }
+
+    removeCourse(course) {
+        for(let i=0; i < this.courses.length; i++) {
+            if(this.courses[i].course === course) {
+                this.courses.splice(i,1);
+                break;
+            }
+        }
+    }
+
+    editCourse(course, level) {
+        for(let i=0; i < this.courses.length; i++) {
+            if(this.courses[i].course === course) {
+                this.courses[i].level = level;
+                break;
+            }
+        }
+    }
+
+    sendMessage(from, message) {
+        this.messages.push({from: from.email, to: this.email, content: message});
+        sendEmail(from.email, this.email, message);
+    }
+
+    showMessagesHistory() {
+        for(let message of this.messages) {
+            console.log(`${message.from} -> ${message.to}: ${message.content}`);
+        }
+    }
+};
+
+class ExtendedUser extends User{
+    constructor({name, surname, email, role}) {
+        super({name, surname, email, role});
+    }
+
+    get fullName() {
+        return `${this.name} ${this.surname}`
+    }
+
+    set fullName(fullName) {
+        let names = fullName.split(' ') ;
+        if(names[0] && names[1]) {
+            this.name = names[0];
+            this.surname = names[1];
+        }
+    }
+
+    static match(teacher, student, course=null) {
+        let result = [];
+        let tLen = teacher.courses.length;
+        if (course !== null) {
+            for (let c of student.courses) {
+                if (c.course === course) {
+                    for (let i = 0; i < tLen; i++) {
+                        let courseMatch = teacher.courses[i].course;
+                        let levelMatch = teacher.courses[i].level;
+                        if (c.course === courseMatch && c.level <= levelMatch) {
+                            result.push(c);
+                        }
+                    }
+                }
+            }
+            return result.length ? result : undefined;
+        }
+        for (let c of student.courses) {
+            for (let i = 0; i < tLen; i++) {
+                let courseMatch = teacher.courses[i].course;
+                let levelMatch = teacher.courses[i].level;
+                if (c.course === courseMatch && c.level <= levelMatch) {
+                    result.push(c);
+                }
+            }
+        }
+        return result;
+    }
+}
+
+class Teacher extends ExtendedUser {
+    constructor({name, surname, email}) {
+        super({name, surname, email, role: 'teacher'});
+    }
+}
+
+class Student extends ExtendedUser {
+    constructor({name, surname, email}) {
+        super({name, surname, email, role: 'student'});
+    }
+}
+
+class Tutoring {
+    constructor() {
+        this.students = [];
+        this.teachers = [];
+    }
+
+    getStudentByName(name, surname) {
+        for (let student of this.students) {
+            if (student.name === name && student.surname === surname) {
+                return student;
+            }
+        }
+        return undefined;
+    }
+
+    getTeacherByName(name, surname) {
+        for (let teacher of this.teachers) {
+            if (teacher.name === name && teacher.surname === surname) {
+                return teacher;
+            }
+        }
+        return undefined;
+    }
+
+    getStudentsForTeacher(teacher) {
+        let result = [];
+        for (let student of this.students) {
+            if (ExtendedUser.match(teacher, student).length) {
+                result.push(student);
+            }
+        }
+        return result;
+    }
+
+    getTeacherForStudent(student) {
+        let result = [];
+        for (let teacher of this.teachers) {
+            if (ExtendedUser.match(teacher, student).length) {
+                result.push(teacher);
+            }
+        }
+        return result;
+    }
+
+    addStudent(name, surname, email) {
+        let student = new Student({name, surname, email});
+        this.students.push(student);
+    }
+
+    addTeacher(name, surname, email) {
+        let teacher = new Teacher({name, surname, email});
+        this.teachers.push(teacher);
+    }
+}
+
+class ExtendedTutoring extends Tutoring {
+    sendMessages(from, to, message) {
+        for (let recipient of to) {
+            recipient.sendMessage(from, message);
+        }
+    }
+}
+
+/*
+// sample solution:
+class ExtendedTutoring extends Tutoring {
+    constructor() {
+        super();
+    }
+
+    sendMessages(from, to = [], message) {
+        if(from && to.length) {
+            for(let target of to) {
+                target.sendMessage(from, message);
+            }
+        }
+    }
+}
+*/
+
+let tutoring = new ExtendedTutoring();
+tutoring.addStudent('Rafael', 'Fife','rfife@rhyta.com');
+tutoring.addStudent('Kelly', 'Estes', 'k_estes@dayrep.com');
+tutoring.addTeacher('Paula', 'Thompkins', 'PaulaThompkins@jourrapide.com');
+let to = [];
+to.push(tutoring.getStudentByName('Rafael', 'Fife'));
+to.push(tutoring.getStudentByName('Kelly', 'Estes'));
+tutoring.sendMessages(tutoring.getTeacherByName('Paula', 'Thompkins'), to, 'test message');
+for(let user of to) {
+    user.showMessagesHistory();
+}
+// -> PaulaThompkins@jourrapide.com -> rfife@rhyta.com: test message
+// -> PaulaThompkins@jourrapide.com -> k_estes@dayrep.com: test message
